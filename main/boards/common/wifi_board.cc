@@ -96,7 +96,12 @@ void WifiBoard::StartNetwork() {
         auto display = Board::GetInstance().GetDisplay();
         std::string notification = Lang::Strings::CONNECTED_TO;
         notification += ssid;
+        int8_t rssi = WifiStation::GetInstance().GetRssi();
+        notification += " (";
+        notification += std::to_string(static_cast<int>(rssi));
+        notification += " dBm)";
         display->ShowNotification(notification.c_str(), 30000);
+        ESP_LOGI(TAG, "Connected to %s, RSSI: %d dBm", ssid.c_str(), static_cast<int>(rssi));
     });
     wifi_station.Start();
 
