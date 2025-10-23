@@ -10,6 +10,7 @@
 #include "iot/thing_manager.h"
 #include "assets/lang_config.h"
 
+#include <wifi_station.h>
 #if CONFIG_USE_AUDIO_PROCESSOR
 #include "afe_audio_processor.h"
 #else
@@ -605,6 +606,16 @@ void Application::OnClockTimer() {
         int min_free_sram = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL);
         ESP_LOGI(TAG, "Free internal: %u minimal internal: %u", free_sram, min_free_sram);
 
+        // Log WiFi RSSI periodically when connected
+        auto& wifi_station = WifiStation::GetInstance();
+        if (wifi_station.IsConnected()) {
+            ESP_LOGI(TAG, "WiFi SSID: %s, RSSI: %d dBm, CH: %d, IP: %s",
+                     wifi_station.GetSsid().c_str(),
+                     wifi_station.GetRssi(),
+                     wifi_station.GetChannel(),
+                     wifi_station.GetIpAddress().c_str());
+        }
+
         // If we have synchronized server time, set the status to clock "HH:MM" if the device is idle
         if (ota_.HasServerTime()) {
             if (device_state_ == kDeviceStateIdle) {
@@ -613,7 +624,15 @@ void Application::OnClockTimer() {
                     time_t now = time(NULL);
                     char time_str[64];
                     strftime(time_str, sizeof(time_str), "%H:%M  ", localtime(&now));
-                    Board::GetInstance().GetDisplay()->SetStatus(time_str);
+                    // Append WiFi RSSI to status when connected
+                    std::string status = time_str;
+                    auto& wifi_station = WifiStation::GetInstance();
+                    if (wifi_station.IsConnected()) {
+                        char rssi_buf[16];
+                        snprintf(rssi_buf, sizeof(rssi_buf), "%ddBm", wifi_station.GetRssi());
+                        status += rssi_buf;
+                    }
+                    Board::GetInstance().GetDisplay()->SetStatus(status.c_str());
                 });
             }
         }
