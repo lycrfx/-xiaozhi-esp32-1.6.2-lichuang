@@ -18,6 +18,8 @@
 #endif
 
 #include <cstring>
+#include <array>
+#include <algorithm>
 #include <esp_log.h>
 #include <cJSON.h>
 #include <driver/gpio.h>
